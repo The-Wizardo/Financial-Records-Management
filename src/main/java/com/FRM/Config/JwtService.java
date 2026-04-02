@@ -1,5 +1,6 @@
 package com.FRM.Config;
 
+import com.FRM.User.Roles;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
@@ -14,6 +15,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class JwtService {
@@ -33,10 +35,14 @@ public class JwtService {
                 .build();
     }
 
-    public String generateToken(String email, Long userId, String role) {
+    public String generateToken(String email, Long userId, Set<Roles> roles) {
+
         Map<String, Object> claims = new HashMap<>();
+
         claims.put("userId", userId);
-        claims.put("role", role);
+        claims.put("roles", roles.stream()
+                .map(Roles::name)
+                .toList());
 
         return Jwts.builder()
                 .subject(email)
