@@ -59,15 +59,15 @@ public class RecordController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> getRecordById(@PathVariable("id") Long id, Authentication authentication) {
-        RecordResponse record = (RecordResponse) recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
-                .map(r-> new RecordResponse(r.getId(),r.getAmount(),r.getType(),r.getCategory(),r.getDate(),r.getNote(),r.isDeleted()))
+        RecordResponse record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+                .map(r -> new RecordResponse(r.getId(), r.getAmount(), r.getType(), r.getCategory(), r.getDate(), r.getNote(), r.isDeleted()))
                 .orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         return ResponseEntity.ok(ApiResponseUtil.success("Data Found", record));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<?>> softDeleteRecord(@PathVariable("id") Long id, Authentication authentication) {
-        Record record = (Record) recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId()).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
+        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId()).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         record.setDeleted(true);
         recordRepository.save(record);
         return ResponseEntity.ok(ApiResponseUtil.success("Record deleted successfully"));
@@ -78,7 +78,7 @@ public class RecordController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
 
-        Record record = (Record) recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("No Data Found"));
         record.setNote(request.note());
         record.setDate(request.date());
