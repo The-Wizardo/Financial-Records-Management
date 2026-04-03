@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/dashboard")
@@ -27,6 +30,23 @@ public class DashboardController {
         BigDecimal expense = recordRepository.getTotalByType(user.getUser().getUserId(), RecordType.EXPENSE);
         DashboardSummaryResponse response = new DashboardSummaryResponse(income, expense, income.subtract(expense));
         return ResponseEntity.ok(ApiResponseUtil.success("Summary Report", response));
+    }
+
+    @GetMapping("/category")
+    public ResponseEntity<?> getCategory(Authentication authentication) {
+        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
+        assert user != null;
+
+        List<Object[]> result = recordRepository.getCategorySummary(user.getUser().getUserId());
+
+        Map<Integer, BigDecimal> map = new HashMap<>();
+
+        for (Object[] row : result) {
+            map.put((Integer) row[0], (BigDecimal) row[1]);
+        }
+
+        return ResponseEntity.ok(ApiResponseUtil.success("Category wise Record", map));
+
     }
 
 

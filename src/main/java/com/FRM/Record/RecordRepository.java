@@ -22,4 +22,13 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
             """)
     BigDecimal getTotalByType(Long userId, RecordType type);
 
+    @Query("""
+             SELECT r.category, SUM(r.amount)
+            FROM Record r
+            WHERE r.user.userId = :userId
+            AND r.isDeleted = false
+            GROUP BY r.category
+            """)
+    List<Object[]> getCategorySummary(Long userId);
+
 }
