@@ -11,10 +11,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,10 +43,10 @@ public class DashboardController {
 
         List<Object[]> result = recordRepository.getCategorySummary(user.getUser().getUserId());
 
-        Map<Integer, BigDecimal> map = new HashMap<>();
+        Map<String, BigDecimal> map = new HashMap<>();
 
         for (Object[] row : result) {
-            map.put((Integer) row[0], (BigDecimal) row[1]);
+            map.put((String) row[0], (BigDecimal) row[1]);
         }
 
         return ResponseEntity.ok(ApiResponseUtil.success("Category wise Record", map));
@@ -71,5 +73,26 @@ public class DashboardController {
         return ResponseEntity.ok(ApiResponseUtil.success("Recent Records", data));
     }
 
+    @GetMapping("/trends")
+    public ResponseEntity<ApiResponse<?>> getTrends(@RequestParam(defaultValue = "MONTH") String type, Authentication authentication) {
+        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
+        assert user != null;
+
+        List<Object[]> result;
+
+        if ("WEEK".equalsIgnoreCase(type)) {
+            result = recordRepository.getWeeklyTrends(user.getUser().getUserId());
+        } else {
+            result = recordRepository.getMonthlyTrends(user.getUser().getUserId());
+        }
+
+        Map<Integer, BigDecimal> data = new LinkedHashMap<>();
+
+        for (Object[] row : result) {
+            data.put(((Number) row[0]).intValue(), (BigDecimal) row[1]);
+        }
+
+        return ResponseEntity.ok(ApiResponseUtil.success("Trends", data));
+    }
 
 }

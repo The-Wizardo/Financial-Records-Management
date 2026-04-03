@@ -2,6 +2,7 @@ package com.FRM.Record;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -33,4 +34,23 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
 
     List<Record> findTop5ByUser_UserIdAndIsDeletedFalseOrderByDateDesc(Long userId);
 
+    @Query("""
+            SELECT FUNCTION('DATE_PART', 'month', r.date), SUM(r.amount)
+            FROM Record r
+            WHERE r.user.userId = :userId
+            AND r.isDeleted = false
+            GROUP BY FUNCTION('DATE_PART', 'month', r.date)
+            ORDER BY FUNCTION('DATE_PART', 'month', r.date)
+            """)
+    List<Object[]> getMonthlyTrends(@Param("userId") Long userId);
+
+    @Query("""
+            SELECT FUNCTION('DATE_PART', 'week', r.date), SUM(r.amount)
+            FROM Record r
+            WHERE r.user.userId = :userId
+            AND r.isDeleted = false
+            GROUP BY FUNCTION('DATE_PART', 'week', r.date)
+            ORDER BY FUNCTION('DATE_PART', 'week', r.date)
+            """)
+    List<Object[]> getWeeklyTrends(@Param("userId") Long userId);
 }
