@@ -1,8 +1,10 @@
 package com.FRM.Dashboard;
 
 import com.FRM.Auth.CustomUserDetails;
+import com.FRM.Exception.ApiResponse;
 import com.FRM.Exception.ApiResponseUtil;
 import com.FRM.Record.RecordRepository;
+import com.FRM.Record.RecordResponse;
 import com.FRM.Record.RecordType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,26 @@ public class DashboardController {
 
         return ResponseEntity.ok(ApiResponseUtil.success("Category wise Record", map));
 
+    }
+
+    @GetMapping("/recent")
+    public ResponseEntity<ApiResponse<?>> getRecent(Authentication authentication) {
+        CustomUserDetails user = (CustomUserDetails) authentication.getPrincipal();
+        assert user != null;
+        List<RecordResponse> data = recordRepository
+                .findTop5ByUser_UserIdAndIsDeletedFalseOrderByDateDesc(user.getUser().getUserId())
+                .stream()
+                .map(r -> new RecordResponse(
+                        r.getId(),
+                        r.getAmount(),
+                        r.getType(),
+                        r.getCategory(),
+                        r.getDate(),
+                        r.getNote(),
+                        r.isDeleted()
+                ))
+                .toList();
+        return ResponseEntity.ok(ApiResponseUtil.success("Recent Records", data));
     }
 
 

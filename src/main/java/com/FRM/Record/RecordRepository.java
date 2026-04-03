@@ -31,4 +31,6 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
             """)
     List<Object[]> getCategorySummary(Long userId);
 
+    List<Record> findTop5ByUser_UserIdAndIsDeletedFalseOrderByDateDesc(Long userId);
+
 }
