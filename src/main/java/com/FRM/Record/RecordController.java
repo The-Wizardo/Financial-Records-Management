@@ -29,7 +29,6 @@ public class RecordController {
 
     @PostMapping("")
     public ResponseEntity<ApiResponse<?>> createRecord(Authentication authentication, @Valid @RequestBody RecordRequest request) {
-        Long userId = getUserByToken(authentication).getUserId();
 
         Record record = new Record();
         record.setNote(request.note());
