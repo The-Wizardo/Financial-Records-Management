@@ -1,5 +1,7 @@
 package com.FRM.Record;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,7 +26,27 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
     BigDecimal getTotalByType(Long userId, RecordType type);
 
     @Query("""
-             SELECT r.category, SUM(r.amount)
+    SELECT r FROM Record r
+    WHERE r.isDeleted = false
+    AND (:userId IS NULL OR r.user.userId = :userId)
+    AND (:type IS NULL OR r.type = :type)
+    AND (
+        :search IS NULL OR
+        r.category LIKE CONCAT('%', :search, '%') OR
+        r.note LIKE CONCAT('%', :search, '%')
+    )
+    AND (:amount IS NULL OR r.amount = :amount)
+""")
+    Page<Record> findRecords(
+            Long userId,
+            RecordType type,
+            String search,
+            BigDecimal amount,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT r.category, SUM(r.amount)
             FROM Record r
             WHERE r.user.userId = :userId
             AND r.isDeleted = false
