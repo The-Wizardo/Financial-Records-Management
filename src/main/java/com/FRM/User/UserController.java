@@ -1,20 +1,12 @@
 package com.FRM.User;
 
-import com.FRM.Auth.UserRequest;
 import com.FRM.Exception.ApiResponse;
 import com.FRM.Exception.ApiResponseUtil;
-import com.FRM.Exception.DuplicateEmailException;
 import com.FRM.Exception.ResourceNotFoundException;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,10 +18,11 @@ public class UserController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable("id") Long id) {
 
-        User user = userRepository.findById(id)
+        User user = userRepository.findByUserIdAndIsActiveTrue(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User Not Found"));
 
-        userRepository.delete(user);
+        user.setActive(false);
+        userRepository.save(user);
 
         return ResponseEntity.ok(ApiResponseUtil.success("User Deleted successfully"));
     }
