@@ -7,11 +7,17 @@ import com.FRM.Exception.ResourceNotFoundException;
 import com.FRM.User.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -57,16 +63,16 @@ public class RecordController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getRecordById(@PathVariable("id") Long id, Authentication authentication) {
-        RecordResponse record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+    public ResponseEntity<ApiResponse<?>> getRecordById(@PathVariable("id") Long id) {
+        RecordResponse record = recordRepository.findByIdAndIsDeletedFalse(id)
                 .map(r -> new RecordResponse(r.getId(), r.getAmount(), r.getType(), r.getCategory(), r.getDate(), r.getNote(), r.isDeleted()))
                 .orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         return ResponseEntity.ok(ApiResponseUtil.success("Data Found", record));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> softDeleteRecord(@PathVariable("id") Long id, Authentication authentication) {
-        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId()).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
+    public ResponseEntity<ApiResponse<?>> softDeleteRecord(@PathVariable("id") Long id) {
+        Record record = recordRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         record.setDeleted(true);
         recordRepository.save(record);
         return ResponseEntity.ok(ApiResponseUtil.success("Record deleted successfully"));
@@ -77,7 +83,7 @@ public class RecordController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
 
-        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+        Record record = recordRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No Data Found"));
         record.setNote(request.note());
         record.setDate(request.date());
@@ -96,5 +102,55 @@ public class RecordController {
         );
         return ResponseEntity.ok().body(ApiResponseUtil.success("update successfully", response));
     }
+
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN','ANALYST','VIEWER')")
+    public ResponseEntity<?> getRecords(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) RecordType type,
+            @RequestParam(required = false) BigDecimal amount,
+            @PageableDefault(
+                    page = 0,
+                    size = 10,
+                    sort = "category",
+                    direction = Sort.Direction.ASC
+            )
+            Pageable pageable)
+    {
+
+
+        Page<Record> page = recordRepository.findRecords(
+                type,
+                search,
+                amount,
+                pageable
+        );
+
+        List<RecordResponse> data = page.getContent().stream()
+                .map(r -> new RecordResponse(
+                        r.getId(),
+                        r.getAmount(),
+                        r.getType(),
+                        r.getCategory(),
+                        r.getDate(),
+                        r.getNote(),
+                        r.isDeleted()
+                ))
+                .toList();
+
+        Map<String, Object> response = Map.of(
+                "content", data,
+                "page", page.getNumber(),
+                "size", page.getSize(),
+                "totalElements", page.getTotalElements(),
+                "totalPages", page.getTotalPages()
+        );
+
+
+        return ResponseEntity.ok(
+                ApiResponseUtil.success("Records fetched successfully", response)
+        );
+    }
+
 
 }

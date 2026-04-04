@@ -1,8 +1,10 @@
 package com.FRM.Config;
 
+import com.FRM.User.Roles;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -26,11 +28,16 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/user/**").hasRole(Roles.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/records/**").hasAnyRole(Roles.ADMIN.name(), Roles.ANALYST.name(),Roles.VIEWER.name())
+                        .requestMatchers(HttpMethod.POST, "/records/**").hasRole(Roles.ADMIN.name())
+                        .requestMatchers(HttpMethod.PUT, "/records/**").hasRole(Roles.ADMIN.name())
+                        .requestMatchers(HttpMethod.DELETE, "/records/**").hasRole(Roles.ADMIN.name())
+                        .requestMatchers("/dashboard/**").hasAnyRole(Roles.ADMIN.name(), Roles.ANALYST.name(), Roles.VIEWER.name())
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
 

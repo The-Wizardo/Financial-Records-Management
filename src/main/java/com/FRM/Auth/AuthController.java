@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 @RestController
@@ -34,15 +33,18 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<?>> createUser(@Valid @RequestBody UserRequest user) {
-        Optional<User> existingUser = userRepository.findUserByEmail(user.email());
-        if (userRepository.findUserByEmail(user.email()).isPresent()) {
+        if (userRepository.findUserByEmailAndIsActiveTrue(user.email()).isPresent()) {
             throw new DuplicateEmailException("Email already exists");
         }
         User user1 = new User();
         user1.setUserName(user.username());
         user1.setEmail(user.email());
         user1.setPassword(passwordEncoder.encode(user.password()));
-        user1.setRoles(Set.of(Roles.VIEWER));
+        if (user.roles() != null && !user.roles().isEmpty()) {
+            user1.setRoles(user.roles());
+        } else {
+            user1.setRoles(Set.of(Roles.VIEWER));
+        }
         userRepository.save(user1);
         Map<String, Object> data = Map.of(
                 "userId", user1.getUserId(),
