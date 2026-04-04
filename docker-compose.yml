@@ -1,0 +1,39 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: database
+    environment:
+      POSTGRES_DB: finance
+      POSTGRES_USER: FRM
+      POSTGRES_PASSWORD: FRM
+    ports:
+      - "5432:5432"
+    volumes:
+      - FRM-Database:/var/lib/postgresql/data
+    networks:
+      - FRM-network
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: backend
+    ports:
+      - "8080:8080"
+    environment:
+      POSTGRES_URL: jdbc:postgresql://database:5432/finance
+      POSTGRES_USER: FRM
+      POSTGRES_PASSWORD: FRM
+      JWT_SECRET: pG0s9IJDbTcMXbJFKEAviWU9SPEmbUqdD5cxiE7chMw=
+    depends_on:
+      - postgres
+    networks:
+      - FRM-network
+    restart: unless-stopped
+
+volumes:
+  FRM-Database:
+
+networks:
+ FRM-network:
