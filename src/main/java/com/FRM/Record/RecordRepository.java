@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface RecordRepository extends JpaRepository<Record, Long> {
     List<RecordResponse> findByUser_UserIdAndIsDeleted(Long userId, boolean deleted);
 
-    Optional<Record> findByIdAndUser_UserIdAndIsDeletedFalse(Long id, Long userId);
+    Optional<Record> findByIdAndIsDeletedFalse(Long id);
 
     @Query("""
             SELECT COALESCE(SUM(r.amount), 0)
@@ -28,7 +28,6 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
     @Query("""
     SELECT r FROM Record r
     WHERE r.isDeleted = false
-    AND (:userId IS NULL OR r.user.userId = :userId)
     AND (:type IS NULL OR r.type = :type)
     AND (
         :search IS NULL OR
@@ -38,7 +37,6 @@ public interface RecordRepository extends JpaRepository<Record, Long> {
     AND (:amount IS NULL OR r.amount = :amount)
 """)
     Page<Record> findRecords(
-            Long userId,
             RecordType type,
             String search,
             BigDecimal amount,

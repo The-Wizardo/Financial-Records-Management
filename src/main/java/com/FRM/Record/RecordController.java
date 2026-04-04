@@ -20,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/records")
@@ -64,16 +63,16 @@ public class RecordController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> getRecordById(@PathVariable("id") Long id, Authentication authentication) {
-        RecordResponse record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+    public ResponseEntity<ApiResponse<?>> getRecordById(@PathVariable("id") Long id) {
+        RecordResponse record = recordRepository.findByIdAndIsDeletedFalse(id)
                 .map(r -> new RecordResponse(r.getId(), r.getAmount(), r.getType(), r.getCategory(), r.getDate(), r.getNote(), r.isDeleted()))
                 .orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         return ResponseEntity.ok(ApiResponseUtil.success("Data Found", record));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<?>> softDeleteRecord(@PathVariable("id") Long id, Authentication authentication) {
-        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId()).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
+    public ResponseEntity<ApiResponse<?>> softDeleteRecord(@PathVariable("id") Long id) {
+        Record record = recordRepository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> new ResourceNotFoundException("No Record Found"));
         record.setDeleted(true);
         recordRepository.save(record);
         return ResponseEntity.ok(ApiResponseUtil.success("Record deleted successfully"));
@@ -84,7 +83,7 @@ public class RecordController {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         assert userDetails != null;
 
-        Record record = recordRepository.findByIdAndUser_UserIdAndIsDeletedFalse(id, getUserByToken(authentication).getUserId())
+        Record record = recordRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new ResourceNotFoundException("No Data Found"));
         record.setNote(request.note());
         record.setDate(request.date());
@@ -116,20 +115,11 @@ public class RecordController {
                     sort = "category",
                     direction = Sort.Direction.ASC
             )
-            Pageable pageable,
-            Authentication authentication)
+            Pageable pageable)
     {
 
-        boolean hasFullAccess = authentication.getAuthorities().stream()
-                .anyMatch(a ->
-                        Objects.equals(a.getAuthority(), "ROLE_ADMIN") ||
-                                Objects.equals(a.getAuthority(), "ROLE_ANALYST")
-                );
-
-        Long userId = hasFullAccess ? null : getUserByToken(authentication).getUserId();
 
         Page<Record> page = recordRepository.findRecords(
-                userId,
                 type,
                 search,
                 amount,
