@@ -22,6 +22,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthEntryPoint customAuthEntryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -36,6 +38,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/records/**").hasRole(Roles.ADMIN.name())
                         .requestMatchers("/dashboard/**").hasAnyRole(Roles.ADMIN.name(), Roles.ANALYST.name(), Roles.VIEWER.name())
                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(ex-> ex.accessDeniedHandler(customAccessDeniedHandler)
+                        .authenticationEntryPoint(customAuthEntryPoint)
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
